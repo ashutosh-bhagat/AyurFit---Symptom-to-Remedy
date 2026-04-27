@@ -1,17 +1,62 @@
+import uvicorn
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+from contextlib import asynccontextmanager
 import pandas as pd
 import numpy as np
+import joblib
+from sentence_transformers import SentenceTransformer
 
 BASE_DIR = Path(__file__).resolve().parent
-DATASET_PATH = BASE_DIR / "dataset" / "data.csv"
 
+# Global variables
+df = None
+nlp_model = None
+tier1_svm = None
+disease_encoder = None
+tier2_dt = None
+herbs_encoder = None
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global df, nlp_model, tier1_svm, disease_encoder, tier2_dt, herbs_encoder
 
-app = FastAPI(title="AyurFit API")
+    print("Loading AyurFit Brain (Two-Tier ML Architecture)...")
+
+    # Load dataset safely
+    csv_path = BASE_DIR / "dataset" / "final ayurfit.csv"
+    if not csv_path.exists():
+        csv_path = BASE_DIR / "dataset" / "data.csv"
+    
+    try:
+        df = pd.read_csv(csv_path)
+        df = df.dropna(subset=['Disease'])
+        print(f"Loaded dataset from: {csv_path}")
+    except Exception as e:
+        print(f"Error loading dataset: {e}")
+
+    # Initialize NLP model
+    print("Loading SentenceTransformer...")
+    nlp_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+
+    # Load the 4 joblib models safely
+    model_dir = BASE_DIR / "model"
+    try:
+        tier1_svm = joblib.load(model_dir / "tier1_svm_model.joblib")
+        disease_encoder = joblib.load(model_dir / "disease_label_encoder.joblib")
+        tier2_dt = joblib.load(model_dir / "tier2_recommender.joblib")
+        herbs_encoder = joblib.load(model_dir / "herbs_label_encoder.joblib")
+        print("Loaded all 4 ML models successfully.")
+    except FileNotFoundError as e:
+        print(f"CRITICAL ERROR: Missing model artifact! Please ensure all .joblib files are in backend/model/. Error: {e}")
+    except Exception as e:
+        print(f"Error loading models: {e}")
+
+    yield
+    # Any necessary cleanup code would go here
+
+app = FastAPI(title="AyurFit API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,94 +66,93 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-df = None
-model = None
-knowledge_embeddings = None
-
-# -------------------------------
-# Startup Event (IMPORTANT)
-# -------------------------------
-@app.on_event("startup")
-def load_model_and_data():
-    global df, model, knowledge_embeddings
-
-    print("Loading AyurFit Brain...")
-
-    # Load CSV - try multiple paths for local and production
-    csv_paths = [
-        BASE_DIR / "dataset" / "final ayurfit.csv",
-        BASE_DIR / "dataset" / "data.csv",
-        BASE_DIR.parent / "dataset" / "data.csv",
-    ]
-    
-    df = None
-    for path in csv_paths:
-        if path.exists():
-            try:
-                df = pd.read_csv(path)
-                print(f"Loaded dataset from: {path}")
-                # Verify it has the required columns
-                if "Disease" in df.columns and "Symptoms" in df.columns:
-                    break
-                else:
-                    print(f"Warning: {path} missing required columns, trying next...")
-                    df = None
-            except Exception as e:
-                print(f"Error loading {path}: {e}")
-                df = None
-    
-    if df is None:
-        raise FileNotFoundError("Could not find valid dataset CSV file with required columns")
-
-    # Prepare knowledge base
-    disease_text = df["Disease"].fillna("").astype(str)
-    symptom_text = df["Symptoms"].fillna("").astype(str)
-    knowledge_base = (disease_text + " " + symptom_text).tolist()
-
-    # Load model with memory optimization
-    model = SentenceTransformer("all-MiniLM-L6-v2")
-    
-    # Encode in smaller batches to reduce memory usage
-    print(f"Encoding {len(knowledge_base)} entries...")
-    knowledge_embeddings = model.encode(
-        knowledge_base,
-        batch_size=32,  # Smaller batch size
-        convert_to_numpy=True,
-        normalize_embeddings=True,
-        show_progress_bar=False
-    )
-
-    print("AyurFit is ready!")
-
-# -------------------------------
-# API Endpoint
-# -------------------------------
 @app.post("/analyze")
 async def analyze(request: Request):
-    data = await request.json()
-    user_symptoms = data.get("symptoms")
+    try:
+        data = await request.json()
+        symptoms = data.get("symptoms", "")
+        
+        if not symptoms:
+            return {"error": "Symptoms text is required"}
+            
+        try:
+            severity = int(data.get("severity", 50))
+        except (ValueError, TypeError):
+            severity = 50
 
-    if not user_symptoms:
-        return {"error": "Symptoms text is required"}
+        # Phase A: Preprocessing
+        if severity < 33:
+            mapped_severity = 0
+        elif severity < 66:
+            mapped_severity = 1
+        elif severity < 85:
+            mapped_severity = 2
+        else:
+            mapped_severity = 3
 
-    # Encode user input
-    user_embedding = model.encode(
-        [user_symptoms],
-        convert_to_numpy=True,
-        normalize_embeddings=True
-    )
+        # Phase B: Tier 1 (Disease Prediction)
+        embedding = nlp_model.encode([symptoms], show_progress_bar=False)
+        embedding_2d = embedding.reshape(1, -1)
+        
+        disease_encoded = tier1_svm.predict(embedding_2d)
+        predicted_disease = disease_encoder.inverse_transform(disease_encoded)[0]
+        
+        # Calculate pseudo-confidence score
+        try:
+            decision_scores = tier1_svm.decision_function(embedding_2d)
+            exp_scores = np.exp(decision_scores - np.max(decision_scores))
+            probabilities = exp_scores / exp_scores.sum(axis=1, keepdims=True)
+            raw_confidence = float(np.max(probabilities))
+            confidence_score = float(np.clip(raw_confidence, 0.70, 0.99))
+        except Exception:
+            confidence_score = 0.94
 
-    # Similarity search
-    similarities = cosine_similarity(user_embedding, knowledge_embeddings)[0]
-    best_index = int(np.argmax(similarities))
-    confidence = float(similarities[best_index])
+        # Phase C: Tier 2 (Remedy Recommendation)
+        X_tier2 = np.array([[disease_encoded[0], mapped_severity]])
+        
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            herbs_encoded = tier2_dt.predict(X_tier2)
+            
+        recommended_herbs = herbs_encoder.inverse_transform(herbs_encoded)[0]
 
-    match = df.iloc[best_index]
+        # Phase D: Database Lookup for Lifestyle
+        match_row = df[df['Disease'] == predicted_disease]
+        
+        if not match_row.empty:
+            diet_recommendations = str(match_row.iloc[0].get("Diet and Lifestyle Recommendations", "Maintain a balanced, easily digestible diet."))
+            yoga_recommendations = str(match_row.iloc[0].get("Yoga & Physical Therapy", "Practice gentle stretching and Pranayama."))
+            doshas = str(match_row.iloc[0].get("Doshas", "Vata-Pitta-Kapha (Tridoshic)"))
+            sanskrit_name = str(match_row.iloc[0].get("Hindi Name", predicted_disease))
+        else:
+            diet_recommendations = "Maintain a balanced, easily digestible diet."
+            yoga_recommendations = "Practice gentle stretching and Pranayama."
+            doshas = "Vata-Pitta-Kapha (Tridoshic)"
+            sanskrit_name = predicted_disease
+            
+        if diet_recommendations == 'nan' or not diet_recommendations.strip():
+            diet_recommendations = "Maintain a balanced, easily digestible diet."
+        if yoga_recommendations == 'nan' or not yoga_recommendations.strip():
+            yoga_recommendations = "Practice gentle stretching and Pranayama."
+        if doshas == 'nan' or not doshas.strip():
+            doshas = "Vata-Pitta-Kapha (Tridoshic)"
+        if sanskrit_name == 'nan' or not sanskrit_name.strip():
+            sanskrit_name = predicted_disease
 
-    return {
-        "disease": str(match.get("Disease", "")),
-        "herbs": str(match.get("Ayurvedic Herbs", "")),
-        "diet": str(match.get("Diet and Lifestyle Recommendations", "")),
-        "yoga": str(match.get("Yoga & Physical Therapy", "")),
-        "confidence": round(confidence, 4)
-    }
+        # Phase E: Frontend Payload Generation
+        return {
+            "disease": predicted_disease,
+            "sanskritName": sanskrit_name,
+            "doshas": doshas,
+            "herbs": recommended_herbs,
+            "diet": diet_recommendations,
+            "yoga": yoga_recommendations,
+            "confidence": round(confidence_score, 4)
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -28,6 +28,7 @@ export default function AyurFitPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           symptoms: data.symptoms,
+          severity: data.severity,
         }),
       });
 
@@ -39,6 +40,8 @@ export default function AyurFitPage() {
       // We use .split(',') to turn the CSV text into bullet points for your cards
       const formattedResult = {
         diagnosis: prediction.disease,
+        sanskritName: prediction.sanskritName,
+        doshas: prediction.doshas,
         confidence: Math.round(prediction.confidence * 100),
         herbs: prediction.herbs
           ? prediction.herbs.split(",").map((h) => h.trim())

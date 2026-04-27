@@ -29,6 +29,8 @@ export default function AyurFitPage() {
         body: JSON.stringify({
           symptoms: data.symptoms,
           severity: data.severity,
+          age: data.age,
+          gender: data.gender,
         }),
       });
 

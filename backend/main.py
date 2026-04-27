@@ -79,6 +79,13 @@ async def analyze(request: Request):
             severity = int(data.get("severity", 50))
         except (ValueError, TypeError):
             severity = 50
+            
+        try:
+            age = int(data.get("age", 35))
+        except (ValueError, TypeError):
+            age = 35
+            
+        gender = str(data.get("gender", "both")).lower()
 
         # Phase A: Preprocessing
         if severity < 33:
@@ -89,6 +96,24 @@ async def analyze(request: Request):
             mapped_severity = 2
         else:
             mapped_severity = 3
+            
+        # Map Age (0: Child, 1: Teen, 2: Adult, 3: Senior)
+        if age < 13:
+            mapped_age = 0
+        elif age < 20:
+            mapped_age = 1
+        elif age < 60:
+            mapped_age = 2
+        else:
+            mapped_age = 3
+            
+        # Map Gender (0: Both, 1: Male, 2: Female)
+        if 'female' in gender or 'women' in gender:
+            mapped_gender = 2
+        elif 'male' in gender or 'men' in gender:
+            mapped_gender = 1
+        else:
+            mapped_gender = 0
 
         # Phase B: Tier 1 (Disease Prediction)
         embedding = nlp_model.encode([symptoms], show_progress_bar=False)
@@ -108,7 +133,7 @@ async def analyze(request: Request):
             confidence_score = 0.94
 
         # Phase C: Tier 2 (Remedy Recommendation)
-        X_tier2 = np.array([[disease_encoded[0], mapped_severity]])
+        X_tier2 = np.array([[disease_encoded[0], mapped_severity, mapped_age, mapped_gender]])
         
         import warnings
         with warnings.catch_warnings():

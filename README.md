@@ -1,51 +1,53 @@
-# 🌿 AyurFit - AI-Powered Ayurvedic Healthcare Assistant
+# 🌿 AyurFit - Two-Tier ML Ayurvedic Healthcare Assistant
 
-AyurFit is a full-stack Ayurvedic health assistant that pairs a Next.js UI with a FastAPI + Sentence Transformers backend. It analyzes a user's symptom text, matches it to the closest disease entry in a curated dataset, and returns herb, diet, and yoga recommendations.
+AyurFit is a full-stack, AI-powered Ayurvedic health assistant. It utilizes a highly advanced **Two-Tier Machine Learning Architecture** via a FastAPI backend to map patient symptoms and demographics to traditional Ayurvedic prescriptions, delivered through a stunning Next.js user interface.
 
 ## 🎯 Project Overview
 
-AyurFit combines modern NLP with traditional Ayurvedic guidance to:
-- Analyze free-form symptom descriptions
-- Match symptoms to diseases using semantic similarity
-- Provide recommended herbs, dietary guidance, and yogic practices
-- Present results with a confidence score for transparency
+AyurFit bridges modern Natural Language Processing (NLP) with ancient Ayurvedic clinical practice:
+- **Tier 1 (Disease Prediction):** Uses `SentenceTransformer (all-MiniLM-L6-v2)` embeddings and a `LinearSVC` (Support Vector Machine) to semantically analyze free-form symptom descriptions and accurately predict the underlying condition and dosha.
+- **Tier 2 (Herbal Recommendation):** Uses a transparent `DecisionTreeClassifier` that takes the Tier 1 disease, along with user-reported **Severity, Age, and Gender**, to prescribe highly specific, personalized botanical formulations.
+- **Dynamic UI:** Features a gorgeous Next.js frontend with glassmorphism, dynamic animations, and beautifully segmented clinical prescriptions (including Sanskrit naming and Dosha targeting).
 
 ## 🏗️ Tech Stack
 
 ### Frontend
 - **Framework:** Next.js 16 / React 19 (App Router)
 - **Styling:** Tailwind CSS v4 + custom design system
-- **UI Components:** Radix UI primitives
+- **UI Components:** Radix UI primitives, Lucide React icons
 
-### Backend
-- **Framework:** FastAPI (Python)
-- **NLP Model:** Sentence Transformers (`all-MiniLM-L6-v2`)
-- **Similarity:** Scikit-learn (cosine similarity)
-- **Data:** Pandas + NumPy
+### Backend & Machine Learning
+- **API Framework:** FastAPI (Python)
+- **NLP Model:** `sentence-transformers/all-MiniLM-L6-v2`
+- **Predictive Models:** `scikit-learn` (LinearSVC, DecisionTreeClassifier)
+- **Data Engineering:** `pandas`, `numpy`, `joblib`
 
 ## 📁 Project Structure
 
-```
-Ayurfit/
-├── app/                         # Next.js app directory
-│   ├── components/              # UI components
-│   │   ├── clinical-card.jsx
-│   │   ├── confidence-gauge.jsx
-│   │   ├── header.jsx
-│   │   ├── herb-illustrations.jsx
-│   │   ├── symptom-input.jsx
-│   │   └── ui/                  # Reusable UI primitives
-│   ├── globals.css
-│   ├── layout.jsx
-│   └── page.jsx                 # Main UI
-├── backend/
-│   └── main.py                  # FastAPI backend
-├── dataset/
-│   └── data.csv                 # Disease dataset
-├── model/
-│   └── ayurfit_nlp.ipynb         # Model development notebook
-├── package.json
-└── pnpm-lock.yaml
+```text
+AyurFit/
+├── backend/                     # FastAPI & Machine Learning Core
+│   ├── dataset/
+│   │   └── final ayurfit.csv    # Master Dataset (1300+ Ayurvedic conditions)
+│   ├── model/
+│   │   ├── train_tier1_model.ipynb   # SVM Training Pipeline
+│   │   ├── evaluate_tier1.ipynb      # K-Fold Cross Validation testing
+│   │   ├── train_tier2_model.ipynb   # Decision Tree Demographic Training
+│   │   └── *.joblib                  # Serialized Production Models
+│   └── main.py                  # The robust FastAPI server
+│
+├── frontend/                    # Next.js Application
+│   ├── app/
+│   │   ├── globals.css
+│   │   ├── layout.jsx
+│   │   └── page.jsx             # Main interactive dashboard
+│   ├── components/
+│   │   ├── symptom-input.jsx           # Captures Symptoms, Age, Gender, Severity
+│   │   ├── clinical-card.jsx           # Renders the full clinical assessment
+│   │   └── herbal-recommendations.jsx  # Dedicated Tier 2 Botanical UI
+│   └── package.json
+│
+└── README.md
 ```
 
 ## 🚀 How to Run
@@ -53,103 +55,47 @@ Ayurfit/
 ### Prerequisites
 - Python 3.8+
 - Node.js 18+
-- npm or pnpm
 
-### Step 1: Install Python Dependencies
+### Step 1: Start the Backend (FastAPI)
+Open a terminal and start the Python API:
 ```bash
 cd backend
-pip install fastapi uvicorn pandas sentence-transformers scikit-learn numpy
-```
+# Optional: create a virtual environment
+python -m venv .venv
+.\.venv\Scripts\activate  # Windows
+pip install -r requirements.txt
 
-### Step 2: Start the Backend (FastAPI)
-```bash
-uvicorn main:app --reload
+# Start the server
+python .\main.py
+# (Or use: uvicorn main:app --reload)
 ```
-The backend starts at **http://127.0.0.1:8000**.
-- First startup can take a couple of minutes while the model loads.
-- API docs: http://127.0.0.1:8000/docs
+The backend initializes the Two-Tier ML brain at **http://127.0.0.1:8000**. 
+*Note: The first startup will download the NLP SentenceTransformer.*
 
-### Step 3: Start the Frontend (Next.js)
+### Step 2: Start the Frontend (Next.js)
 Open a **new terminal**:
 ```bash
-cd ..
+cd frontend
 npm install
 npm run dev
 ```
-The frontend runs at **http://localhost:3000**.
+The frontend UI starts at **http://localhost:3000**.
 
-### Step 4: Use the App
-1. Open http://localhost:3000 in your browser
-2. Enter symptoms (e.g., "headache and fever")
-3. View the clinical assessment with recommendations
+### Step 3: Use the App
+1. Navigate to http://localhost:3000.
+2. Enter your precise symptoms (e.g., "severe headache and blurry vision").
+3. Adjust the **Age, Gender, and Severity** sliders.
+4. Click "Botanical Scan" to trigger the ML pipeline.
 
-## 🧠 How It Works
+## 🧠 The Two-Tier ML Pipeline
 
-### Machine Learning Pipeline
-1. **Data Preparation**
-   - `dataset/data.csv` contains diseases, symptoms, herbs, diet, and yoga fields
-   - Disease names + symptoms are combined into a search corpus
+1. **Preprocessing:** The API safely maps the frontend UI's continuous sliders into categorical demographic bins (e.g., `Age=35` -> `Adult (2)`, `Gender=Male` -> `Male (1)`).
+2. **Tier 1 Classification:** The user's unstructured symptom string is embedded via NLP and fed into the `LinearSVC`. The model outputs a predicted `disease` and a calculated `confidence score` (using softmax decision thresholds).
+3. **Tier 2 Recommendation:** The `DecisionTreeClassifier` ingests a 4-dimensional matrix: `[[disease, severity, age, gender]]` to output a highly specific `Ayurvedic Herbs` prescription that accounts for the user's demographic profile.
+4. **Knowledge Lookup:** The backend rapidly queries the Pandas DataFrame to append secondary holistic regimens (Sanskrit Name, Doshas, Diet, Yoga).
 
-2. **Embedding Generation**
-   ```python
-   model = SentenceTransformer("all-MiniLM-L6-v2")
-   knowledge_embeddings = model.encode(knowledge_base, normalize_embeddings=True)
-   ```
+## 📊 The Dataset
+The `final ayurfit.csv` comprises **1,300 unique clinical conditions** mapped extensively across Ayurvedic categories, detailing Doshas (Vata, Pitta, Kapha), Formulations, and deep Demographic splits.
 
-3. **Symptom Matching**
-   - User symptoms are embedded
-   - Cosine similarity against the full dataset
-   - Best match is returned with a confidence score
-
-4. **Result Delivery**
-   - API returns disease, herbs, diet, yoga, and confidence
-   - UI formats CSV text into readable bullet lists
-
-### Note on Patient Details
-The UI collects age, gender, and severity, but the current backend only uses the `symptoms` text for matching. These fields are ready for future personalization.
-
-## 📊 Dataset
-
-The dataset includes **1,300 diseases across 18 Ayurvedic categories**, such as:
-- Neurological Disorders
-- Digestive System Disorders
-- Respiratory Disorders
-- Cardiovascular Disorders
-- Musculoskeletal Disorders
-- Mental Health Disorders
-
-## 🔗 API Endpoints
-
-### POST `/analyze`
-Analyzes symptoms and returns Ayurvedic recommendations.
-
-**Request:**
-```json
-{
-  "symptoms": "headache and fever"
-}
-```
-
-**Response:**
-```json
-{
-  "disease": "Common Cold",
-  "herbs": "Tulsi, Ginger, Turmeric",
-  "diet": "Warm fluids, light meals",
-  "yoga": "Pranayama, Anulom Vilom",
-  "confidence": 0.87
-}
-```
-
-## 🤝 Contributing
-
-This project is part of an AI healthcare research initiative. For questions or contributions, please contact the repository owner.
-
-## 📝 Note
-
-This is an AI-generated suggestion tool. Always consult a qualified Ayurvedic practitioner (Vaidya) before starting any treatment.
-
-## 🔗 Links
-
-- **Vercel Deployment:** https://vercel.com/hinals-projects-4220bf4b/v0-ayur-fit-healthcare-ui
-- **v0.app Chat:** https://v0.app/chat/uijdnQWs9jK
+## 📝 Disclaimer
+This is an AI-generated experimental healthcare research tool. Always consult a qualified Ayurvedic practitioner (Vaidya) or medical doctor before starting any treatment or consuming botanical remedies.

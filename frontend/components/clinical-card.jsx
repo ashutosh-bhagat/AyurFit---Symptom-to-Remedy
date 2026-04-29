@@ -101,7 +101,7 @@ export function ClinicalCard({ result }) {
       {/* Footer Note */}
       <div className="backdrop-blur-xl bg-sage/20 border border-border/50 rounded-xl p-4 text-center">
         <p className="text-xs text-forest-light/70 italic">
-          This assessment is powered by Advanced AI and traditional Ayurvedic principles. Please consult with a qualified practitioner for personalized guidance.
+          <b style={{ color: "var(--forest-light)", fontSize: "15px", fontWeight: "500" }}>This assessment is powered by Advanced AI and traditional Ayurvedic principles. <br />Please consult with a qualified practitioner for personalized guidance.</b>
         </p>
       </div>
     </div>

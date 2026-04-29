@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 
 export function SymptomInput({ onAnalyze, isLoading }) {
   const [symptoms, setSymptoms] = useState("");
-  const [age, setAge] = useState(35);
+  const [age, setAge] = useState(22);
   const [gender, setGender] = useState("male");
   const [severity, setSeverity] = useState(50);
 
@@ -94,8 +94,16 @@ export function SymptomInput({ onAnalyze, isLoading }) {
               Gender
             </label>
             <select
+              id="gender-select"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const sliderThumb = document.querySelector('[role="slider"]');
+                  if (sliderThumb) sliderThumb.focus();
+                }
+              }}
               className="w-full h-12 px-4 bg-parchment/50 border border-forest/10 rounded-lg text-forest text-sm focus:border-forest/30 focus:ring-2 focus:ring-forest/20 focus:outline-none transition-all cursor-pointer appearance-none"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%232D5A27' strokeWidth='1.5'%3E%3Cpath strokeLinecap='round' strokeLinejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E")`,
@@ -120,7 +128,17 @@ export function SymptomInput({ onAnalyze, isLoading }) {
                 {severity < 33 ? "Mild" : severity < 66 ? "Moderate" : "Severe"}
               </span>
             </div>
-            <div className="pt-3">
+            <div 
+              className="pt-3"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (symptoms.trim() && !isLoading) {
+                    handleSubmit();
+                  }
+                }
+              }}
+            >
               <Slider
                 value={[severity]}
                 onValueChange={(value) => setSeverity(value[0])}

@@ -16,10 +16,10 @@ export function ClinicalCard({ result }) {
           </div>
           <div className="text-right">
             <p className="text-[10px] uppercase tracking-wider text-forest-light/60">Date</p>
-            <p className="text-sm text-forest font-medium">{new Date().toLocaleDateString('en-US', { 
-              month: 'long', 
-              day: 'numeric', 
-              year: 'numeric' 
+            <p className="text-sm text-forest font-medium">{new Date().toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
             })}</p>
           </div>
         </div>
@@ -30,13 +30,13 @@ export function ClinicalCard({ result }) {
         <div className="absolute top-0 right-0 w-32 h-32 bg-forest/5 rounded-bl-full" />
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.15em] text-forest-light/60 mb-2">Primary Diagnosis (Tier 1)</p>
+            <p className="text-[10px] uppercase tracking-[0.15em] text-forest-light/60 mb-2">Possible Disease Type</p>
             <h4 className="font-serif text-3xl font-bold text-forest mb-1">{result.diagnosis}</h4>
             {result.sanskritName && result.sanskritName !== result.diagnosis && (
               <p className="text-lg font-serif text-forest-light italic opacity-90">{result.sanskritName}</p>
             )}
             <p className="text-sm text-forest-light/70 leading-relaxed mt-4 max-w-xl">
-              Based on your symptoms and constitution, our Tier 1 Support Vector Machine model indicates a strong correlation with this condition.
+              Based on your symptoms and constitution, our Machine Learning model indicates a strong correlation with this type of condition.
             </p>
           </div>
           <div className="flex-shrink-0">
@@ -45,8 +45,6 @@ export function ClinicalCard({ result }) {
         </div>
       </div>
 
-      {/* NEW: Extracted Herbal Component */}
-      <HerbalRecommendations herbs={result.herbs} doshas={result.doshas} />
 
       {/* Results Grid - Yoga & Diet */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -96,6 +94,9 @@ export function ClinicalCard({ result }) {
           </ul>
         </div>
       </div>
+
+      {/* NEW: Extracted Herbal Component */}
+      <HerbalRecommendations herbs={result.herbs} doshas={result.doshas} />
 
       {/* Footer Note */}
       <div className="backdrop-blur-xl bg-sage/20 border border-border/50 rounded-xl p-4 text-center">

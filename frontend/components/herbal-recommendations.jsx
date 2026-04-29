@@ -10,7 +10,7 @@ export function HerbalRecommendations({ herbs, doshas }) {
       {/* Decorative background elements */}
       <div className="absolute -right-12 -top-12 w-40 h-40 bg-sage/30 rounded-full blur-3xl group-hover:bg-sage/40 transition-all duration-500" />
       <div className="absolute -left-12 -bottom-12 w-40 h-40 bg-forest/10 rounded-full blur-3xl group-hover:bg-forest/20 transition-all duration-500" />
-      
+
       <div className="relative z-10">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
           <div className="flex items-center gap-4">
@@ -18,24 +18,17 @@ export function HerbalRecommendations({ herbs, doshas }) {
               <Leaf className="w-6 h-6 text-forest drop-shadow-md" />
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-forest-light/70 mb-1 font-semibold">Tier 2 ML Suggestion</p>
-              <h4 className="font-serif text-2xl font-bold text-forest tracking-tight">Prescribed Botanicals</h4>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-forest-light/70 mb-1 font-semibold">Personalized Suggestion</p>
+              <h4 className="font-serif text-2xl font-bold text-forest tracking-tight">Recommended Herbs</h4>
             </div>
           </div>
-          
-          {doshas && (
-            <div className="flex items-center gap-2 bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-sage/40 shadow-sm">
-              <Droplets className="w-4 h-4 text-forest-light" />
-              <span className="text-xs font-medium tracking-wide text-forest-light uppercase">Target: {doshas}</span>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {herbs.map((herb, index) => (
-            <div 
-              key={index} 
-              className="flex items-center gap-4 bg-white/60 hover:bg-white/90 transition-colors duration-300 p-4 rounded-xl border border-sage/30 shadow-sm group/item"
+            <div
+              key={index}
+              className="flex items-center gap-4 bg-card/60 hover:bg-card/90 transition-colors duration-300 p-4 rounded-xl border border-sage/30 shadow-sm group/item"
             >
               <div className="w-8 h-8 rounded-full bg-forest/5 flex items-center justify-center group-hover/item:bg-forest/10 transition-colors">
                 <Sparkles className="w-4 h-4 text-forest/70" />
@@ -44,7 +37,7 @@ export function HerbalRecommendations({ herbs, doshas }) {
             </div>
           ))}
         </div>
-        
+
         <div className="mt-6 pt-6 border-t border-forest/10 flex items-start gap-3">
           <div className="mt-0.5">
             <svg className="w-4 h-4 text-forest-light/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -52,7 +45,7 @@ export function HerbalRecommendations({ herbs, doshas }) {
             </svg>
           </div>
           <p className="text-xs text-forest-light/70 leading-relaxed italic">
-            These herbal remedies were precisely predicted by the Tier 2 Decision Tree based on your specific disease mapping and reported symptom severity. Always consult an Ayurvedic doctor before starting new herbs.
+            These herbal remedies were precisely predicted by the ML model based on your specific disease and reported symptom severity, age and Gender. <b>Always consult an Ayurvedic doctor before starting new herbs</b>.
           </p>
         </div>
       </div>

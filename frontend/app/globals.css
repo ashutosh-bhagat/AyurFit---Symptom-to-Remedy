@@ -40,7 +40,7 @@
   --sidebar-accent-foreground: #2D5A27;
   --sidebar-border: rgba(45, 90, 39, 0.1);
   --sidebar-ring: #2D5A27;
-  
+
   /* Custom AyurFit tokens */
   --forest: #2D5A27;
   --sage: #94AF9F;
@@ -82,13 +82,20 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+
+  /* Custom AyurFit tokens for Dark Mode */
+  --forest: #E2E8E0;
+  --sage: #2A4334;
+  --parchment: #0C1210;
+  --forest-light: #B6D1B4;
+  --sage-light: #15221B;
 }
 
 @theme inline {
   --font-sans: var(--font-sans), 'Inter', system-ui, sans-serif;
   --font-serif: var(--font-serif), 'Playfair Display', Georgia, serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
-  
+
   /* Custom color tokens */
   --color-forest: var(--forest);
   --color-sage: var(--sage);
@@ -137,6 +144,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

@@ -1,5 +1,7 @@
 "use client"
 
+import { ThemeToggle } from "@/components/theme-toggle"
+
 export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-lg bg-parchment/80 border-b border-border/50">
@@ -18,8 +20,9 @@ export function Header() {
           </div>
         </div>
 
-        {/* Peace of Mind Status */}
+        {/* Peace of Mind Status and Theme Toggle */}
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <div className="flex items-center gap-2 bg-sage/30 px-4 py-2 rounded-full">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest/60 opacity-75" />

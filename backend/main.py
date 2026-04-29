@@ -43,10 +43,10 @@ async def lifespan(app: FastAPI):
     # Load the 4 joblib models safely
     model_dir = BASE_DIR / "model"
     try:
-        tier1_svm = joblib.load(model_dir / "tier1_svm_model.joblib")
-        disease_encoder = joblib.load(model_dir / "disease_label_encoder.joblib")
-        tier2_dt = joblib.load(model_dir / "tier2_recommender.joblib")
-        herbs_encoder = joblib.load(model_dir / "herbs_label_encoder.joblib")
+        tier1_svm = joblib.load(model_dir / "sys-dis imp files" / "tier1_svm_model.joblib")
+        disease_encoder = joblib.load(model_dir / "sys-dis imp files" / "disease_label_encoder.joblib")
+        tier2_dt = joblib.load(model_dir / "dis-rem imp files" / "tier2_recommender.joblib")
+        herbs_encoder = joblib.load(model_dir / "dis-rem imp files" / "herbs_label_encoder.joblib")
         print("Loaded all 4 ML models successfully.")
     except FileNotFoundError as e:
         print(f"CRITICAL ERROR: Missing model artifact! Please ensure all .joblib files are in backend/model/. Error: {e}")
@@ -69,6 +69,9 @@ app.add_middleware(
 @app.post("/analyze")
 async def analyze(request: Request):
     try:
+        if any(resource is None for resource in [nlp_model, tier1_svm, disease_encoder, tier2_dt, herbs_encoder]):
+            return {"error": "Model initialization failed. Check backend startup logs for missing/corrupt model files."}
+
         data = await request.json()
         symptoms = data.get("symptoms", "")
         
@@ -143,7 +146,7 @@ async def analyze(request: Request):
         recommended_herbs = herbs_encoder.inverse_transform(herbs_encoded)[0]
 
         # Phase D: Database Lookup for Lifestyle
-        match_row = df[df['Disease'] == predicted_disease]
+        match_row = df[df['Disease'] == predicted_disease] if df is not None else pd.DataFrame()
         
         if not match_row.empty:
             diet_recommendations = str(match_row.iloc[0].get("Diet and Lifestyle Recommendations", "Maintain a balanced, easily digestible diet."))

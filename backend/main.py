@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     csv_path = BASE_DIR / "dataset" / "ayurfit_final.csv"
     if not csv_path.exists():
         csv_path = BASE_DIR / "dataset" / "data.csv"
-    
+
     try:
         df = pd.read_csv(csv_path)
         df = df.dropna(subset=['New_Disease_Group'])
@@ -131,7 +131,8 @@ async def analyze(request: Request):
             exp_scores = np.exp(decision_scores - np.max(decision_scores))
             probabilities = exp_scores / exp_scores.sum(axis=1, keepdims=True)
             raw_confidence = float(np.max(probabilities))
-            confidence_score = float(np.clip(raw_confidence, 0.70, 0.99))
+            # Use the model's raw confidence (0.0 - 1.0) instead of forcing a 0.70 minimum.
+            confidence_score = float(np.clip(raw_confidence, 0.0, 1.0))
         except Exception:
             confidence_score = 0.94
 
@@ -144,6 +145,10 @@ async def analyze(request: Request):
             herbs_encoded = tier2_dt.predict(X_tier2)
             
         recommended_herbs = herbs_encoder.inverse_transform(herbs_encoded)[0]
+        
+        # Check if herbs recommendation is empty or invalid
+        if recommended_herbs == 'nan' or not str(recommended_herbs).strip() or "None specific" in str(recommended_herbs):
+            recommended_herbs = "Consult an Ayurvedic Doctor"
 
         # Phase D: Database Lookup for Lifestyle
         match_row = df[df['Disease_Group'] == predicted_disease] if df is not None else pd.DataFrame()

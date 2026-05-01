@@ -25,13 +25,13 @@ async def lifespan(app: FastAPI):
     print("Loading AyurFit Brain (Two-Tier ML Architecture)...")
 
     # Load dataset safely
-    csv_path = BASE_DIR / "dataset" / "final ayurfit.csv"
+    csv_path = BASE_DIR / "dataset" / "ayurfit_final.csv"
     if not csv_path.exists():
         csv_path = BASE_DIR / "dataset" / "data.csv"
     
     try:
         df = pd.read_csv(csv_path)
-        df = df.dropna(subset=['Disease'])
+        df = df.dropna(subset=['New_Disease_Group'])
         print(f"Loaded dataset from: {csv_path}")
     except Exception as e:
         print(f"Error loading dataset: {e}")

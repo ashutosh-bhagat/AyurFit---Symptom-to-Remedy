@@ -151,7 +151,7 @@ async def analyze(request: Request):
             recommended_herbs = "Consult an Ayurvedic Doctor"
 
         # Phase D: Database Lookup for Lifestyle
-        match_row = df[df['Disease_Group'] == predicted_disease] if df is not None else pd.DataFrame()
+        match_row = df[df['New_Disease_Group'] == predicted_disease] if df is not None else pd.DataFrame()
         
         if not match_row.empty:
             diet_recommendations = str(match_row.iloc[0].get("Diet and Lifestyle Recommendations", "Maintain a balanced, easily digestible diet."))

@@ -5,18 +5,39 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+
+const MIN_CHARS = 20;
 
 export function SymptomInput({ onAnalyze, isLoading }) {
   const [symptoms, setSymptoms] = useState("");
   const [age, setAge] = useState(22);
   const [gender, setGender] = useState("male");
   const [severity, setSeverity] = useState(50);
+  const [inputError, setInputError] = useState("");
+
+  const handleSymptomsChange = (e) => {
+    setSymptoms(e.target.value);
+    // Clear error as soon as user types enough
+    if (inputError && e.target.value.trim().length >= MIN_CHARS) {
+      setInputError("");
+    }
+  };
 
   const handleSubmit = () => {
-    if (symptoms.trim()) {
-      onAnalyze({ symptoms, age, gender, severity });
+    const trimmed = symptoms.trim();
+    if (!trimmed) {
+      setInputError("Please describe your symptoms before scanning.");
+      return;
     }
+    if (trimmed.length < MIN_CHARS) {
+      setInputError(
+        `Please describe your symptoms in more detail (at least ${MIN_CHARS} characters). Single words like "headache" or "pain" are too vague for an accurate assessment.`
+      );
+      return;
+    }
+    setInputError("");
+    onAnalyze({ symptoms, age, gender, severity });
   };
 
   return (
@@ -39,19 +60,37 @@ export function SymptomInput({ onAnalyze, isLoading }) {
         </div>
 
         {/* Symptom Textarea */}
-        <div className="relative mb-8">
+        <div className="relative mb-2">
           <Textarea
             value={symptoms}
-            onChange={(e) => setSymptoms(e.target.value)}
+            onChange={handleSymptomsChange}
             placeholder="Share your symptoms in detail... For example: persistent fatigue, difficulty sleeping, mild headaches in the morning, feeling of heaviness after meals..."
-            className="min-h-[140px] bg-parchment/50 border-forest/10 rounded-xl text-forest placeholder:text-forest-light/40 text-sm leading-relaxed resize-none focus:border-forest/30 focus:ring-forest/20 transition-all duration-300"
+            className={`min-h-[140px] bg-parchment/50 rounded-xl text-forest placeholder:text-forest-light/40 text-sm leading-relaxed resize-none transition-all duration-300 ${
+              inputError
+                ? "border-2 border-red-400/70 focus:border-red-400 focus:ring-red-300/20"
+                : "border-forest/10 focus:border-forest/30 focus:ring-forest/20"
+            }`}
           />
 
-          {/* Character count */}
-          <div className="absolute bottom-3 right-3 text-[10px] text-forest-light/40">
-            {symptoms.length} characters
+          {/* Character count with min indicator */}
+          <div className={`absolute bottom-3 right-3 text-[10px] transition-colors duration-200 ${
+            symptoms.length === 0
+              ? "text-forest-light/40"
+              : symptoms.trim().length < MIN_CHARS
+              ? "text-amber-500/80 font-medium"
+              : "text-forest/50"
+          }`}>
+            {symptoms.length} / {MIN_CHARS} min
           </div>
         </div>
+
+        {/* Inline validation error */}
+        {inputError && (
+          <div className="mb-6 flex items-start gap-2.5 bg-red-50/80 dark:bg-red-900/20 border border-red-200/60 dark:border-red-700/40 rounded-xl px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">{inputError}</p>
+          </div>
+        )}
 
         {/* Divider */}
         <div className="flex items-center gap-4 mb-8">
@@ -158,7 +197,7 @@ export function SymptomInput({ onAnalyze, isLoading }) {
         <div className="flex justify-center">
           <Button
             onClick={handleSubmit}
-            disabled={!symptoms.trim() || isLoading}
+            disabled={isLoading}
             className="group relative px-10 py-6 h-auto bg-forest hover:bg-forest-light text-parchment font-medium text-sm tracking-wide rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
           >
             {/* Button shine effect */}

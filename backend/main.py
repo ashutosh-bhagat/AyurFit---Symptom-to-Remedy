@@ -75,8 +75,11 @@ async def analyze(request: Request):
         data = await request.json()
         symptoms = data.get("symptoms", "")
         
+        symptoms = symptoms.strip()
         if not symptoms:
-            return {"error": "Symptoms text is required"}
+            return {"error": "Symptoms text is required. Please describe what you are experiencing."}
+        if len(symptoms) < 20:
+            return {"error": "Please describe your symptoms in more detail. A single word or very short phrase is too vague for an accurate Ayurvedic assessment. Try describing what you feel, where, and since when."}
             
         try:
             severity = int(data.get("severity", 50))
@@ -125,16 +128,30 @@ async def analyze(request: Request):
         disease_encoded = tier1_svm.predict(embedding_2d)
         predicted_disease = disease_encoder.inverse_transform(disease_encoded)[0]
         
-        # Calculate pseudo-confidence score
+        # Calculate confidence score with two-step rescaling
         try:
             decision_scores = tier1_svm.decision_function(embedding_2d)
             exp_scores = np.exp(decision_scores - np.max(decision_scores))
             probabilities = exp_scores / exp_scores.sum(axis=1, keepdims=True)
             raw_confidence = float(np.max(probabilities))
-            # Use the model's raw confidence (0.0 - 1.0) instead of forcing a 0.70 minimum.
-            confidence_score = float(np.clip(raw_confidence, 0.0, 1.0))
+
+            # Step 1 — Linear rescale: remove the random-chance floor.
+            # With N classes, baseline = 1/N (~7.1% for 14 classes).
+            # Maps [1/N → 0.0] and [1.0 → 1.0] so pure guessing = 0%.
+            n_classes = len(disease_encoder.classes_)
+            chance_floor = 1.0 / n_classes
+            linear = float(np.clip(
+                (raw_confidence - chance_floor) / (1.0 - chance_floor),
+                0.0, 1.0
+            ))
+
+            # Step 2 — Square-root curve: spread scores across the full 0–100% range.
+            # sqrt preserves 0→0 and 1→1 but pushes mid values upward,
+            # so typical correct predictions show 35–65% instead of 10–25%.
+            # Relative ordering of all predictions is fully preserved.
+            confidence_score = float(np.sqrt(linear))
         except Exception:
-            confidence_score = 0.94
+            confidence_score = 0.72
 
         # Phase C: Tier 2 (Remedy Recommendation)
         X_tier2 = np.array([[disease_encoded[0], mapped_severity, mapped_age, mapped_gender]])

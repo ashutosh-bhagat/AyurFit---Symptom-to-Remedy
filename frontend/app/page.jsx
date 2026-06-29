@@ -10,15 +10,17 @@ import {
   NeemIllustration,
   GingerIllustration,
 } from "@/components/herb-illustrations";
-import { Leaf } from "lucide-react";
+import { Leaf, AlertTriangle, X } from "lucide-react";
 
 export default function AyurFitPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [apiError, setApiError] = useState("");
 
   const handleAnalyze = async (data) => {
     setIsLoading(true);
     setResult(null);
+    setApiError("");
 
     try {
       // 1. Call your FastAPI Backend
@@ -37,6 +39,12 @@ export default function AyurFitPage() {
       if (!response.ok) throw new Error("Backend server is not responding.");
 
       const prediction = await response.json();
+
+      // Handle backend validation / error responses
+      if (prediction.error) {
+        setApiError(prediction.error);
+        return;
+      }
 
       // 2. Map Python results to match your v0 UI structure
       // We use .split(',') to turn the CSV text into bullet points for your cards
@@ -59,9 +67,7 @@ export default function AyurFitPage() {
       setResult(formattedResult);
     } catch (error) {
       console.error("Analysis failed:", error);
-      alert(
-        "Connection Error: Please ensure your Python server is running (uvicorn main:app --reload)",
-      );
+      setApiError("Connection Error: Please ensure your Python backend server is running on port 8000.");
     } finally {
       setIsLoading(false);
     }
@@ -99,6 +105,23 @@ export default function AyurFitPage() {
           <section className="mb-12">
             <SymptomInput onAnalyze={handleAnalyze} isLoading={isLoading} />
           </section>
+
+          {/* API Error Banner */}
+          {apiError && (
+            <section className="mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-3 bg-red-50/90 dark:bg-red-900/20 border border-red-200/70 dark:border-red-700/50 rounded-2xl px-5 py-4 shadow-sm">
+                <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="flex-1 text-sm text-red-700 dark:text-red-300 leading-relaxed">{apiError}</p>
+                <button
+                  onClick={() => setApiError("")}
+                  className="text-red-400 hover:text-red-600 dark:hover:text-red-200 transition-colors flex-shrink-0 ml-2"
+                  aria-label="Dismiss error"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </section>
+          )}
 
           {result && (
             <section className="mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">

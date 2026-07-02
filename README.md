@@ -14,17 +14,17 @@ User Browser
      │
      ▼
 ┌─────────────────────────────┐
-│   Frontend (Vercel)          │   Next.js 16 / React 19
-│   ayur-fit-symptom-to-       │   Tailwind CSS v4, Radix UI
-│   remedy.vercel.app          │
+│   Frontend (Vercel)         │   Next.js 16 / React 19
+│   ayur-fit-symptom-to-      │   Tailwind CSS v4, Radix UI
+│   remedy.vercel.app         │
 └──────────────┬──────────────┘
                │ HTTPS POST /analyze
                ▼
 ┌─────────────────────────────┐
-│   Backend (HuggingFace       │   FastAPI + Python
-│   Spaces — Docker)           │   ML: scikit-learn, sentence-transformers
-│   ashutoshbhagat-ayurfit     │   Data: pandas, numpy, joblib
-│   .hf.space                  │
+│   Backend (HuggingFace      │   FastAPI + Python
+│   Spaces — Docker)          │   ML: scikit-learn, sentence-transformers
+│   ashutoshbhagat-ayurfit    │   Data: pandas, numpy, joblib
+│   .hf.space                 │
 └─────────────────────────────┘
 ```
 

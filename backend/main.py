@@ -60,7 +60,13 @@ app = FastAPI(title="AyurFit API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",                        # Local dev
+        "http://127.0.0.1:3000",                        # Local dev
+        "https://ashutoshbhagat-ayurfit.hf.space",      # HF Space itself
+        "https://*.pages.dev",                          # Cloudflare Pages preview
+        "https://*.vercel.app",                         # Vercel (fallback)
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

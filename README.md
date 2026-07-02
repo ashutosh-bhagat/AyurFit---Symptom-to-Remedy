@@ -10,9 +10,9 @@ AyurFit bridges modern Natural Language Processing (NLP) with ancient Ayurvedic 
 ## 🏗️ Architecture
 
 ```
-User Browser
-     │
-     ▼
+          User Browser
+               |
+               ▼
 ┌─────────────────────────────┐
 │   Frontend (Vercel)         │   Next.js 16 / React 19
 │   ayur-fit-symptom-to-      │   Tailwind CSS v4, Radix UI

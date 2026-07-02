@@ -159,9 +159,9 @@ async def analyze(request: Request):
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            herbs_encoded = tier2_dt.predict(X_tier2)
+            herbs_pred = tier2_dt.predict(X_tier2)
             
-        recommended_herbs = herbs_encoder.inverse_transform(herbs_encoded)[0]
+        recommended_herbs = herbs_encoder.inverse_transform(herbs_pred)[0]
         
         # Check if herbs recommendation is empty or invalid
         if recommended_herbs == 'nan' or not str(recommended_herbs).strip() or "None specific" in str(recommended_herbs):
@@ -205,4 +205,5 @@ async def analyze(request: Request):
         return {"error": str(e)}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # reload=True is for local dev only — disabled for production
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
